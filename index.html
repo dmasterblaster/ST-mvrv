@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bitcoin Short-Term Holder MVRV</title>
+
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <style>
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:#ffffff;
+      color:#111;
+    }
+    #chart{
+      width:100vw;
+      height:100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div id="chart"></div>
+
+<script>
+function toNum(x){
+  const n = Number(x);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function loadChart(){
+  try{
+    const res = await fetch("data/short-term-holder-mvrv.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) throw new Error("JSON is empty or invalid");
+
+    // ---- Trailing 3 years only ----
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 3);
+
+    const filtered = rows.filter(r => {
+      const d = new Date(r?.date);
+      return Number.isFinite(d.getTime()) && d >= cutoff;
+    });
+    // -------------------------------
+
+    const dates = [];
+    const mvrv = [];
+    const price = [];
+
+    for (const r of filtered){
+      const d = r?.date;
+      const v = toNum(r?.sth_mvrv);
+      const px = toNum(r?.price);
+
+      if (!d || v === null) continue;
+
+      dates.push(String(d));
+      mvrv.push(v);
+      price.push(px);
+    }
+
+    const traces = [
+      {
+        x: dates,
+        y: mvrv,
+        type: "scatter",
+        mode: "lines",
+        name: "STH MVRV",
+        line: { width: 2 },
+        hovertemplate: "STH MVRV: %{y:.2f}<br>%{x}<extra></extra>"
+      }
+    ];
+
+    if (price.some(v => v !== null)){
+      traces.push({
+        x: dates,
+        y: price,
+        type: "scatter",
+        mode: "lines",
+        name: "BTC Price",
+        line: { width: 2, color: "#000000" },
+        connectgaps: true,
+        hovertemplate: "BTC Price: $%{y:,.0f}<br>%{x}<extra></extra>"
+      });
+    }
+
+    const layout = {
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#ffffff",
+      margin: { l: 80, r: 30, t: 30, b: 60 },
+
+      xaxis: {
+        type: "date",
+        showgrid: false
+      },
+
+      yaxis: {
+        tickformat: ",",
+        showgrid: true,
+        gridcolor: "#e6e6e6",
+        zeroline: false
+      },
+
+      /* 🔹 CENTER WATERMARK */
+      images: [
+        {
+          source: "assets/tbl-logo.png",
+          xref: "paper",
+          yref: "paper",
+          x: 0.5,
+          y: 0.5,
+          sizex: 0.6,
+          sizey: 0.6,
+          xanchor: "center",
+          yanchor: "middle",
+          opacity: 0.06,
+          layer: "below"
+        }
+      ],
+
+      /* 🔹 BRAND LABEL */
+      annotations: [
+        {
+          xref: "paper",
+          yref: "paper",
+          x: 0.04,
+          y: 0.94,
+          xanchor: "left",
+          yanchor: "top",
+          text: "Charts by: @TheBitcoinLayer",
+          showarrow: false,
+          font: { size: 14, color: "#111" },
+          bgcolor: "rgba(255,255,255,0.7)",
+          bordercolor: "rgba(0,0,0,0.15)",
+          borderwidth: 1,
+          borderpad: 6
+        }
+      ],
+
+      legend: { orientation: "h", x: 0.02, y: 1.05 }
+    };
+
+    Plotly.newPlot("chart", traces, layout, {
+      responsive: true,
+      displaylogo: false
+    });
+
+  } catch (err){
+    console.error(err);
+    document.getElementById("chart").innerHTML =
+      "<p style='color:#cf222e;padding:20px;'>Error loading chart</p>";
+  }
+}
+
+loadChart();
+</script>
+
+</body>
+</html>
