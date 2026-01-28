@@ -101,14 +101,17 @@ async function loadChart(){
         showgrid: false
       },
 
+      /* LEFT AXIS: STH MVRV */
       yaxis: {
         title: "STH MVRV",
+        range: [0, 5],              // 👈 FIXED SCALE
         showgrid: true,
         gridcolor: "#e6e6e6",
         zeroline: false,
         tickformat: ".2f"
       },
 
+      /* RIGHT AXIS: BTC PRICE */
       yaxis2: {
         title: "BTC Price (USD)",
         overlaying: "y",
@@ -121,6 +124,7 @@ async function loadChart(){
         zeroline: false
       },
 
+      /* 🔹 CENTER WATERMARK */
       images: [
         {
           source: "assets/tbl-logo.png",
@@ -137,6 +141,7 @@ async function loadChart(){
         }
       ],
 
+      /* 🔹 BRAND LABEL */
       annotations: [
         {
           xref: "paper",
